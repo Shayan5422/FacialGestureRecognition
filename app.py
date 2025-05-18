@@ -5,7 +5,8 @@ from utils import (
     render_architecture_section,
     render_process_section,
     render_technology_section,
-    render_applications_section
+    render_applications_section,
+    render_live_demo_section
 )
 
 # Page configuration
@@ -47,7 +48,7 @@ st.sidebar.title("Navigation")
 section = st.sidebar.radio(
     "Go to",
     ["Introduction", "Project Objective", "Architecture & Methodology", 
-     "Process Flow", "Technologies", "Applications"]
+     "Process Flow", "Technologies", "Applications", "Live Demo"]
 )
 
 # Render the selected section
@@ -63,6 +64,8 @@ elif section == "Technologies":
     render_technology_section()
 elif section == "Applications":
     render_applications_section()
+elif section == "Live Demo":
+    render_live_demo_section()
 
 # Footer
 st.sidebar.markdown("---")

@@ -3,6 +3,35 @@ import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
+import cv2
+import dlib
+from scipy.spatial import distance as dist # For EAR calculation
+import time # for progress bar simulation and potentially camera loop
+
+# Constants for detection (from eye_eyebrow_detector.py)
+EYEBROW_TO_EYE_VERTICAL_DISTANCE_INCREASE_FACTOR = 0.15
+CALIBRATION_FRAMES = 30 # Reduced for faster demo calibration
+EAR_THRESHOLD = 0.20
+DLIB_SHAPE_PREDICTOR_PATH = "shape_predictor_68_face_landmarks.dat"
+
+# Display states (from eye_eyebrow_detector.py)
+STATE_YES = "Yes"
+STATE_NO = "No"
+STATE_NORMAL = "Normal"
+STATE_CALIBRATING = "Calibrating..."
+
+# Landmark indices (from eye_eyebrow_detector.py)
+(user_L_eye_indices_start, user_L_eye_indices_end) = (42, 48)
+(user_R_eye_indices_start, user_R_eye_indices_end) = (36, 42)
+user_L_eye_top_indices = [43, 44]
+user_R_eye_top_indices = [37, 38]
+user_L_eyebrow_y_calc_indices = range(23, 26)
+user_R_eyebrow_y_calc_indices = range(18, 21)
+
+
+# Initialize dlib's face detector and facial landmark predictor
+# We'll initialize this inside the function or manage its state
+# to avoid issues with Streamlit's rerun behavior.
 
 # Stock photo URLs provided
 FACIAL_RECOGNITION_IMAGES = [
@@ -43,7 +72,7 @@ def render_intro_section():
         This presentation explores a system that can:
         
         - Detect facial landmarks in real-time video
-        - Track specific facial movements (eyes, eyebrows, mouth)
+        - Track specific facial movements (eyes, eyebrows)
         - Classify gestures into meaningful actions
         - Respond to gestures with appropriate system actions
         
@@ -51,7 +80,7 @@ def render_intro_section():
         """)
     
     with col2:
-        st.image(FACIAL_RECOGNITION_IMAGES[0], use_column_width=True)
+        st.image(FACIAL_RECOGNITION_IMAGES[0], use_container_width=True)
         st.caption("Facial recognition technology")
     
     st.markdown("---")
@@ -94,27 +123,23 @@ def render_objective_section():
         
         - Eye movements (blinks, winks)
         - Eyebrow movements (raising, furrowing)
-        - Head gestures (nodding yes, shaking no)
         - Normal/neutral state
         """)
     
     with col2:
-        st.image(FACIAL_RECOGNITION_IMAGES[1], use_column_width=True)
-        st.caption("Facial recognition technology in action")
+        
         
         # Add an interactive element - demo selector
         st.markdown("### Interactive Demo")
         gesture_type = st.selectbox(
             "Select a gesture type to learn more",
-            ["Eye Movements", "Eyebrow Movements", "Head Gestures", "Neutral State"]
+            ["Eye Movements", "Eyebrow Movements", "Neutral State"]
         )
         
         if gesture_type == "Eye Movements":
             st.info("Eye movements like blinks and winks can be used for selection or confirmation actions.")
         elif gesture_type == "Eyebrow Movements":
             st.info("Eyebrow raising can indicate interest or be used as a trigger for specific actions.")
-        elif gesture_type == "Head Gestures":
-            st.info("Nodding (yes) and shaking (no) provide intuitive ways to confirm or reject prompts.")
         elif gesture_type == "Neutral State":
             st.info("The neutral state serves as the baseline for detecting deviations that signal intentional gestures.")
 
@@ -132,7 +157,7 @@ def render_architecture_section():
     """)
     
     # Display CNN-LSTM architecture diagram
-    st.image(AI_DATA_VIZ_IMAGES[1], use_column_width=True)
+    
     st.caption("Visual representation of CNN-LSTM architecture")
     
     col1, col2 = st.columns([1, 1])
@@ -182,45 +207,7 @@ def render_architecture_section():
         # Add interactive LSTM cell visualization
         st.markdown("#### LSTM Cell Structure")
         
-        # Using Plotly for interactive visualization
-        fig = go.Figure()
-        
-        # Draw the LSTM cell components
-        fig.add_shape(type="rect", x0=0.1, y0=0.1, x1=0.9, y1=0.9, 
-                    line=dict(color="RoyalBlue"), fillcolor="lightblue", opacity=0.3)
-        
-        # Input gate
-        fig.add_shape(type="circle", x0=0.2, y0=0.6, x1=0.3, y1=0.7, 
-                    line=dict(color="green"), fillcolor="lightgreen")
-        
-        # Forget gate
-        fig.add_shape(type="circle", x0=0.2, y0=0.4, x1=0.3, y1=0.5, 
-                    line=dict(color="red"), fillcolor="lightpink")
-        
-        # Output gate
-        fig.add_shape(type="circle", x0=0.7, y0=0.5, x1=0.8, y1=0.6, 
-                    line=dict(color="purple"), fillcolor="lavender")
-        
-        # Cell state line
-        fig.add_shape(type="line", x0=0.1, y0=0.5, x1=0.9, y1=0.5, 
-                    line=dict(color="black", width=2))
-        
-        # Add annotations
-        fig.add_annotation(x=0.25, y=0.65, text="Input<br>Gate", showarrow=False)
-        fig.add_annotation(x=0.25, y=0.45, text="Forget<br>Gate", showarrow=False)
-        fig.add_annotation(x=0.75, y=0.55, text="Output<br>Gate", showarrow=False)
-        fig.add_annotation(x=0.5, y=0.8, text="Cell State", showarrow=False)
-        
-        fig.update_layout(
-            title="LSTM Cell Structure",
-            showlegend=False,
-            width=400,
-            height=300,
-            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
-        )
-        
-        st.plotly_chart(fig)
+        st.image("https://upload.wikimedia.org/wikipedia/commons/9/93/LSTM_Cell.svg", caption="LSTM Cell Structure", use_container_width=True)
     
     st.markdown("""
     ### Combined Model Benefits
@@ -244,7 +231,7 @@ def render_process_section():
     """)
     
     # Create tabs for different stages of the process
-    tab1, tab2, tab3, tab4 = st.tabs(["Data Collection", "Image Processing", "Model Training", "Real-time Prediction"])
+    tab1, tab2, tab3 = st.tabs(["Data Collection", "Image Processing", "Model Training"])
     
     with tab1:
         col1, col2 = st.columns([3, 2])
@@ -264,14 +251,14 @@ def render_process_section():
             """)
         
         with col2:
-            st.image(FACIAL_RECOGNITION_IMAGES[2], use_column_width=True)
-            st.caption("Data collection process")
+            
+            st.caption("")
     
     with tab2:
         col1, col2 = st.columns([2, 3])
         
         with col1:
-            st.image(AI_DATA_VIZ_IMAGES[0], use_column_width=True)
+            st.image(AI_DATA_VIZ_IMAGES[0], use_container_width=True)
             st.caption("Image processing visualization")
         
         with col2:
@@ -290,53 +277,75 @@ def render_process_section():
             """)
             
             # Interactive element - landmark detection demo
-            show_landmarks = st.checkbox("Show facial landmarks example")
+            show_landmarks = st.checkbox("Show facial landmarks example (eyes and eyebrows)")
             if show_landmarks:
                 landmark_cols = st.columns(2)
                 with landmark_cols[0]:
-                    # Mock landmark visualization using matplotlib
+                    # Mock landmark visualization using matplotlib - focusing on eyes and eyebrows
                     fig, ax = plt.subplots(figsize=(4, 4))
                     
                     # Create a simple face outline
                     circle = plt.Circle((0.5, 0.5), 0.4, fill=False, color='blue')
                     ax.add_patch(circle)
                     
-                    # Add mock landmarks
-                    # Eyes
-                    for x, y in [(0.35, 0.6), (0.65, 0.6)]:
-                        eye = plt.Circle((x, y), 0.05, fill=False, color='green')
-                        ax.add_patch(eye)
-                        ax.plot(x, y, 'ro', markersize=3)
+                    # Add eye landmarks with extra detail (6 points per eye)
+                    # Left eye
+                    left_eye_x = [0.30, 0.33, 0.37, 0.41, 0.38, 0.34]
+                    left_eye_y = [0.60, 0.58, 0.58, 0.60, 0.62, 0.62]
+                    ax.plot(left_eye_x, left_eye_y, 'g-', linewidth=2)
+                    for x, y in zip(left_eye_x, left_eye_y):
+                        ax.plot(x, y, 'go', markersize=4)
                     
-                    # Eyebrows
-                    ax.plot([0.25, 0.45], [0.7, 0.7], 'r-')
-                    ax.plot([0.55, 0.75], [0.7, 0.7], 'r-')
+                    # Right eye
+                    right_eye_x = [0.59, 0.62, 0.66, 0.70, 0.67, 0.63]
+                    right_eye_y = [0.60, 0.58, 0.58, 0.60, 0.62, 0.62]
+                    ax.plot(right_eye_x, right_eye_y, 'g-', linewidth=2)
+                    for x, y in zip(right_eye_x, right_eye_y):
+                        ax.plot(x, y, 'go', markersize=4)
                     
-                    # Nose
-                    ax.plot(0.5, 0.5, 'ro', markersize=3)
-                    ax.plot([0.45, 0.5, 0.55], [0.45, 0.4, 0.45], 'r-')
+                    # Add detailed eyebrow landmarks (5 points per eyebrow)
+                    # Left eyebrow
+                    left_brow_x = [0.25, 0.30, 0.35, 0.40, 0.45]
+                    left_brow_y = [0.70, 0.72, 0.73, 0.72, 0.70]
+                    ax.plot(left_brow_x, left_brow_y, 'r-', linewidth=2)
+                    for x, y in zip(left_brow_x, left_brow_y):
+                        ax.plot(x, y, 'ro', markersize=4)
                     
-                    # Mouth
-                    ax.plot([0.35, 0.65], [0.3, 0.3], 'r-')
+                    # Right eyebrow
+                    right_brow_x = [0.55, 0.60, 0.65, 0.70, 0.75]
+                    right_brow_y = [0.70, 0.72, 0.73, 0.72, 0.70]
+                    ax.plot(right_brow_x, right_brow_y, 'r-', linewidth=2)
+                    for x, y in zip(right_brow_x, right_brow_y):
+                        ax.plot(x, y, 'ro', markersize=4)
+                    
+                    # Add labels
+                    ax.text(0.36, 0.67, "Left Eye", fontsize=9, ha='center')
+                    ax.text(0.64, 0.67, "Right Eye", fontsize=9, ha='center')
+                    ax.text(0.35, 0.76, "Left Eyebrow", fontsize=9, ha='center')
+                    ax.text(0.65, 0.76, "Right Eyebrow", fontsize=9, ha='center')
                     
                     ax.set_xlim(0, 1)
                     ax.set_ylim(0, 1)
-                    ax.set_title("Facial Landmarks")
+                    ax.set_title("Eye and Eyebrow Landmarks")
                     ax.axis('off')
                     
                     st.pyplot(fig)
                 
                 with landmark_cols[1]:
                     st.markdown("""
-                    **Key Facial Landmarks:**
+                    **Focused Facial Landmarks Analysis:**
                     
-                    - 6 points for each eye
-                    - 5 points for each eyebrow
+                    This system specifically analyzes:
+                    
+                    - **Eyes (6 points each)**: Tracks eye openness, blinks, and winking
+                    - **Eyebrows (5 points each)**: Detects eyebrow raising, furrowing, and expressions
+                    
+                    While the shape_predictor_68_face_landmarks model can identify 68 facial landmarks including:
                     - 9 points for the nose
                     - 20 points for the mouth
                     - 17 points for the face contour
                     
-                    These landmarks provide precise spatial information about facial features and their movements.
+                    This implementation focuses exclusively on eye and eyebrow movements for gesture recognition.
                     """)
     
     with tab3:
@@ -391,49 +400,7 @@ def render_process_section():
         
         st.plotly_chart(fig)
     
-    with tab4:
-        col1, col2 = st.columns([3, 2])
-        
-        with col1:
-            st.markdown("""
-            ### Real-time Prediction
-            
-            Once trained, the model can process live video for real-time gesture recognition:
-            
-            1. **Frame Capture**: Getting frames from video stream
-            2. **Face Detection**: Locating face in each frame
-            3. **Landmark Detection**: Identifying facial landmarks
-            4. **Feature Extraction**: Processing landmarks for model input
-            5. **Sequence Formation**: Collecting frames into temporal sequence
-            6. **Prediction**: Running the CNN-LSTM model on the sequence
-            7. **Output**: Displaying the recognized gesture
-            
-            The system operates with minimal latency to provide responsive feedback.
-            """)
-        
-        with col2:
-            st.image(FACIAL_RECOGNITION_IMAGES[3], use_column_width=True)
-            st.caption("Real-time facial gesture recognition")
-            
-            # Add an interactive demo
-            st.markdown("### Try a Demo Prediction")
-            selected_gesture = st.selectbox(
-                "Select a gesture to simulate prediction",
-                ["Eye Blink", "Eyebrow Raise", "Head Nod (Yes)", "Head Shake (No)", "Neutral"]
-            )
-            
-            if st.button("Run Prediction"):
-                confidence = np.random.uniform(0.85, 0.98)
-                st.success(f"Predicted Gesture: **{selected_gesture}** (Confidence: {confidence:.2f})")
-                
-                # Show a progress bar for processing
-                progress_bar = st.progress(0)
-                for i in range(100):
-                    # Update progress bar
-                    progress_bar.progress(i + 1)
-                    # Add a slight delay
-                    import time
-                    time.sleep(0.01)
+    
 
 def render_technology_section():
     """Render the technologies section"""
@@ -457,7 +424,7 @@ def render_technology_section():
         - **Matplotlib/Plotly**: Visualization
         """)
         
-        st.image(AI_DATA_VIZ_IMAGES[2], use_column_width=True)
+        st.image(AI_DATA_VIZ_IMAGES[2], use_container_width=True)
         st.caption("Python data analysis visualization")
     
     with col2:
@@ -539,7 +506,7 @@ def render_technology_section():
         - **Image augmentation**: Diverse training samples
         """)
         
-        st.image(AI_DATA_VIZ_IMAGES[3], use_column_width=True)
+        st.image(AI_DATA_VIZ_IMAGES[3], use_container_width=True)
         st.caption("Computer vision analysis")
     
     st.markdown("---")
@@ -585,8 +552,7 @@ def render_applications_section():
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        st.image(PRESENTATION_SLIDE_IMAGES[0], use_column_width=True)
-        st.caption("Interactive applications of facial recognition")
+        
         
         st.markdown("""
         ### Human-Computer Interaction
@@ -625,8 +591,7 @@ def render_applications_section():
         - **Public Kiosks**: Enable gesture-based interaction with public information systems
         """)
         
-        st.image(PRESENTATION_SLIDE_IMAGES[1], use_column_width=True)
-        st.caption("Presentation of gesture recognition applications")
+        
     
     # Interactive application explorer
     st.markdown("### Application Explorer")
@@ -707,3 +672,243 @@ def render_applications_section():
 
     # Using the SVG file from assets instead of embedding directly
     st.image("assets/workflow_diagram.svg")
+
+def get_landmark_point_from_detector(landmarks, index):
+    """Helper function from eye_eyebrow_detector.py"""
+    return (landmarks.part(index).x, landmarks.part(index).y)
+
+def eye_aspect_ratio_from_detector(eye_pts):
+    """Helper function from eye_eyebrow_detector.py"""
+    A = dist.euclidean(eye_pts[1], eye_pts[5])
+    B = dist.euclidean(eye_pts[2], eye_pts[4])
+    C = dist.euclidean(eye_pts[0], eye_pts[3])
+    ear_val = (A + B) / (2.0 * C)
+    return ear_val
+
+def initialize_dlib_components():
+    """Initializes dlib detector and predictor."""
+    try:
+        detector = dlib.get_frontal_face_detector()
+        predictor = dlib.shape_predictor(DLIB_SHAPE_PREDICTOR_PATH)
+        return detector, predictor
+    except RuntimeError as e:
+        st.error(f"Failed to load dlib model: {e}. Please ensure '{DLIB_SHAPE_PREDICTOR_PATH}' is in the correct path.")
+        return None, None
+
+def render_live_demo_section():
+    """Render the live facial gesture recognition demo section"""
+    section_header("Live Facial Gesture Demo")
+    st.write("This demo uses your webcam to perform real-time eye and eyebrow gesture detection.")
+    st.warning("Ensure you have a webcam connected and have granted permission if prompted by your browser. Also, make sure `shape_predictor_68_face_landmarks.dat` is in the application's root directory.")
+
+    if 'detector' not in st.session_state or 'predictor' not in st.session_state:
+        st.session_state.detector, st.session_state.predictor = initialize_dlib_components()
+
+    if st.session_state.detector is None or st.session_state.predictor is None:
+        st.error("Dlib components could not be initialized. The demo cannot run.")
+        return
+
+    # Initialize session state variables for the demo
+    if 'run_demo' not in st.session_state:
+        st.session_state.run_demo = False
+    if 'calibration_counter' not in st.session_state:
+        st.session_state.calibration_counter = 0
+    if 'calibration_data_user_L_eyebrow_y' not in st.session_state:
+        st.session_state.calibration_data_user_L_eyebrow_y = []
+    if 'calibration_data_user_R_eyebrow_y' not in st.session_state:
+        st.session_state.calibration_data_user_R_eyebrow_y = []
+    if 'calibration_data_user_L_eye_top_y' not in st.session_state:
+        st.session_state.calibration_data_user_L_eye_top_y = []
+    if 'calibration_data_user_R_eye_top_y' not in st.session_state:
+        st.session_state.calibration_data_user_R_eye_top_y = []
+    if 'normal_user_L_eyebrow_y_avg' not in st.session_state:
+        st.session_state.normal_user_L_eyebrow_y_avg = 0
+    if 'normal_user_R_eyebrow_y_avg' not in st.session_state:
+        st.session_state.normal_user_R_eyebrow_y_avg = 0
+    if 'normal_user_L_eye_top_y_avg' not in st.session_state:
+        st.session_state.normal_user_L_eye_top_y_avg = 0
+    if 'normal_user_R_eye_top_y_avg' not in st.session_state:
+        st.session_state.normal_user_R_eye_top_y_avg = 0
+    if 'normal_dist_L_eyebrow_to_eye' not in st.session_state:
+        st.session_state.normal_dist_L_eyebrow_to_eye = 0
+    if 'normal_dist_R_eyebrow_to_eye' not in st.session_state:
+        st.session_state.normal_dist_R_eyebrow_to_eye = 0
+    if 'current_state_demo' not in st.session_state:
+        st.session_state.current_state_demo = STATE_CALIBRATING
+    if 'camera_active' not in st.session_state:
+        st.session_state.camera_active = False
+
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Start/Restart Demo"):
+            st.session_state.run_demo = True
+            st.session_state.camera_active = True
+            # Reset calibration
+            st.session_state.calibration_counter = 0
+            st.session_state.calibration_data_user_L_eyebrow_y = []
+            st.session_state.calibration_data_user_R_eyebrow_y = []
+            st.session_state.calibration_data_user_L_eye_top_y = []
+            st.session_state.calibration_data_user_R_eye_top_y = []
+            st.session_state.current_state_demo = STATE_CALIBRATING
+            st.info("Calibration started. Look at the camera with a normal expression.")
+    with col2:
+        if st.button("Stop Demo"):
+            st.session_state.run_demo = False
+            st.session_state.camera_active = False
+
+
+    if st.session_state.run_demo and st.session_state.camera_active:
+        # Placeholder for video feed
+        frame_placeholder = st.empty()
+        
+        # Attempt to open the webcam
+        # We manage cap in session_state to persist it across reruns if needed,
+        # but for a continuous loop, it's tricky.
+        # A common pattern is to release it if we stop.
+        if 'cap' not in st.session_state or not st.session_state.cap.isOpened():
+             st.session_state.cap = cv2.VideoCapture(0)
+
+        if not st.session_state.cap.isOpened():
+            st.error("Cannot open webcam.")
+            st.session_state.run_demo = False # Stop demo if camera fails
+            return
+
+        detector = st.session_state.detector
+        predictor = st.session_state.predictor
+
+        while st.session_state.run_demo and st.session_state.cap.isOpened():
+            ret, frame = st.session_state.cap.read()
+            if not ret:
+                st.error("Failed to grab frame from webcam.")
+                break
+
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            faces = detector(gray)
+            
+            display_text = st.session_state.current_state_demo
+            
+            if st.session_state.calibration_counter < CALIBRATION_FRAMES:
+                st.session_state.current_state_demo = STATE_CALIBRATING
+                display_text = f"{STATE_CALIBRATING} ({st.session_state.calibration_counter}/{CALIBRATION_FRAMES})"
+
+
+            for face in faces:
+                landmarks = predictor(gray, face)
+
+                user_L_eyebrow_current_y_pts = [landmarks.part(i).y for i in user_L_eyebrow_y_calc_indices]
+                current_user_L_eyebrow_y_avg = np.mean(user_L_eyebrow_current_y_pts) if user_L_eyebrow_current_y_pts else 0
+
+                user_R_eyebrow_current_y_pts = [landmarks.part(i).y for i in user_R_eyebrow_y_calc_indices]
+                current_user_R_eyebrow_y_avg = np.mean(user_R_eyebrow_current_y_pts) if user_R_eyebrow_current_y_pts else 0
+
+                user_L_eye_top_current_y_pts = [landmarks.part(i).y for i in user_L_eye_top_indices]
+                current_user_L_eye_top_y_avg = np.mean(user_L_eye_top_current_y_pts) if user_L_eye_top_current_y_pts else 0
+                
+                user_R_eye_top_current_y_pts = [landmarks.part(i).y for i in user_R_eye_top_indices]
+                current_user_R_eye_top_y_avg = np.mean(user_R_eye_top_current_y_pts) if user_R_eye_top_current_y_pts else 0
+
+                user_L_eye_all_pts = np.array([get_landmark_point_from_detector(landmarks, i) for i in range(user_L_eye_indices_start, user_L_eye_indices_end)], dtype="int")
+                user_R_eye_all_pts = np.array([get_landmark_point_from_detector(landmarks, i) for i in range(user_R_eye_indices_start, user_R_eye_indices_end)], dtype="int")
+                
+                left_ear = eye_aspect_ratio_from_detector(user_L_eye_all_pts)
+                right_ear = eye_aspect_ratio_from_detector(user_R_eye_all_pts)
+                avg_ear = (left_ear + right_ear) / 2.0
+
+                if st.session_state.calibration_counter < CALIBRATION_FRAMES:
+                    st.session_state.calibration_data_user_L_eyebrow_y.append(current_user_L_eyebrow_y_avg)
+                    st.session_state.calibration_data_user_R_eyebrow_y.append(current_user_R_eyebrow_y_avg)
+                    st.session_state.calibration_data_user_L_eye_top_y.append(current_user_L_eye_top_y_avg)
+                    st.session_state.calibration_data_user_R_eye_top_y.append(current_user_R_eye_top_y_avg)
+                    st.session_state.calibration_counter += 1
+                    
+                    display_text = f"{STATE_CALIBRATING} ({st.session_state.calibration_counter}/{CALIBRATION_FRAMES})"
+
+                    if st.session_state.calibration_counter == CALIBRATION_FRAMES:
+                        st.session_state.normal_user_L_eyebrow_y_avg = np.mean(st.session_state.calibration_data_user_L_eyebrow_y) if st.session_state.calibration_data_user_L_eyebrow_y else 0
+                        st.session_state.normal_user_R_eyebrow_y_avg = np.mean(st.session_state.calibration_data_user_R_eyebrow_y) if st.session_state.calibration_data_user_R_eyebrow_y else 0
+                        st.session_state.normal_user_L_eye_top_y_avg = np.mean(st.session_state.calibration_data_user_L_eye_top_y) if st.session_state.calibration_data_user_L_eye_top_y else 0
+                        st.session_state.normal_user_R_eye_top_y_avg = np.mean(st.session_state.calibration_data_user_R_eye_top_y) if st.session_state.calibration_data_user_R_eye_top_y else 0
+
+                        st.session_state.normal_dist_L_eyebrow_to_eye = st.session_state.normal_user_L_eye_top_y_avg - st.session_state.normal_user_L_eyebrow_y_avg
+                        st.session_state.normal_dist_R_eyebrow_to_eye = st.session_state.normal_user_R_eye_top_y_avg - st.session_state.normal_user_R_eyebrow_y_avg
+                        
+                        st.session_state.current_state_demo = STATE_NORMAL
+                        display_text = STATE_NORMAL
+                        st.success("Calibration finished.")
+                else: # Detection Phase
+                    st.session_state.current_state_demo = STATE_NORMAL # Default to normal after calibration
+                    display_text = STATE_NORMAL
+                    if st.session_state.normal_dist_L_eyebrow_to_eye != 0 and st.session_state.normal_dist_R_eyebrow_to_eye != 0:
+                        if avg_ear < EAR_THRESHOLD:
+                            st.session_state.current_state_demo = STATE_YES
+                            display_text = STATE_YES
+                        else:
+                            current_dist_L = current_user_L_eye_top_y_avg - current_user_L_eyebrow_y_avg
+                            current_dist_R = current_user_R_eye_top_y_avg - current_user_R_eyebrow_y_avg
+
+                            threshold_dist_L = st.session_state.normal_dist_L_eyebrow_to_eye * (1 + EYEBROW_TO_EYE_VERTICAL_DISTANCE_INCREASE_FACTOR)
+                            threshold_dist_R = st.session_state.normal_dist_R_eyebrow_to_eye * (1 + EYEBROW_TO_EYE_VERTICAL_DISTANCE_INCREASE_FACTOR)
+                            
+                            if st.session_state.normal_dist_L_eyebrow_to_eye <= 0: threshold_dist_L = st.session_state.normal_dist_L_eyebrow_to_eye + abs(st.session_state.normal_dist_L_eyebrow_to_eye * EYEBROW_TO_EYE_VERTICAL_DISTANCE_INCREASE_FACTOR) + 5
+                            if st.session_state.normal_dist_R_eyebrow_to_eye <= 0: threshold_dist_R = st.session_state.normal_dist_R_eyebrow_to_eye + abs(st.session_state.normal_dist_R_eyebrow_to_eye * EYEBROW_TO_EYE_VERTICAL_DISTANCE_INCREASE_FACTOR) + 5
+
+                            if current_dist_L > threshold_dist_L and current_dist_R > threshold_dist_R:
+                                st.session_state.current_state_demo = STATE_NO
+                                display_text = STATE_NO
+            
+            # Display the detected state on the frame
+            color = (255, 255, 0) # Default for Normal/Calibrating
+            if st.session_state.current_state_demo == STATE_YES:
+                color = (0, 255, 0)
+            elif st.session_state.current_state_demo == STATE_NO:
+                color = (0, 0, 255)
+            
+            # Make text larger and position it higher
+            cv2.putText(frame, display_text, (frame.shape[1] // 2 - 100, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, color, 3, cv2.LINE_AA)
+
+            # Convert frame to RGB for Streamlit
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_placeholder.image(frame_rgb, channels="RGB")
+            
+            # Add a small delay to make the video smoother and allow Streamlit to process
+            # time.sleep(0.01) # Removed for faster processing, relying on inherent delays
+
+        # Release camera when demo stops or an error occurs
+        if 'cap' in st.session_state and st.session_state.cap.isOpened():
+            st.session_state.cap.release()
+        if st.session_state.camera_active is False and 'cap' in st.session_state: # if explicitly stopped
+             del st.session_state.cap
+
+
+    elif not st.session_state.run_demo and st.session_state.camera_active:
+        # This case handles when Stop Demo is clicked, ensuring camera is released.
+        if 'cap' in st.session_state and st.session_state.cap.isOpened():
+            st.session_state.cap.release()
+            del st.session_state.cap # Ensure it's re-initialized if started again
+        st.session_state.camera_active = False
+        st.info("Live demo stopped.")
+
+# Example of how to call this new section in a main app structure:
+# if __name__ == "__main__":
+#     st.set_page_config(layout="wide")
+#     # Apply custom CSS (optional)
+#     # st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+#
+#     render_intro_section()
+#     render_objective_section()
+#     render_architecture_section()
+#     render_process_section()
+#     render_technology_section()
+#     render_applications_section()
+#     render_live_demo_section() # New section added here
+#
+#     st.sidebar.title("Navigation")
+#     page = st.sidebar.radio("Go to", ["Introduction", "Objective", "Architecture", "Process Flow", "Technologies", "Applications", "Live Demo"])
+#
+#     if page == "Introduction": render_intro_section()
+#     elif page == "Objective": render_objective_section()
+#     # ... etc. for other sections
+#     elif page == "Live Demo": render_live_demo_section() # Call if selected from sidebar too.
+#     # This part is just an example of how one might structure the main app.
+#     # The key is that `render_live_demo_section()` can now be called.
