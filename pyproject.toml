@@ -11,6 +11,5 @@ dependencies = [
     "opencv-python",
     "dlib",
     "imutils",
-    "pyautogui",
-    "cmake"
+    "pyautogui"
 ]
