@@ -1,0 +1,103 @@
+<svg width="800" height="500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="500" fill="#f8f9fa" rx="10" ry="10"/>
+  
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial" font-size="24" text-anchor="middle" fill="#1E88E5">CNN-LSTM Architecture for Facial Gesture Recognition</text>
+  
+  <!-- CNN Section -->
+  <text x="150" y="70" font-family="Arial" font-size="18" text-anchor="middle" fill="#388E3C">CNN Component</text>
+  
+  <!-- Input Layer -->
+  <rect x="50" y="100" width="60" height="300" rx="5" ry="5" fill="#bbdefb" stroke="#1976D2" stroke-width="2"/>
+  <text x="80" y="255" font-family="Arial" font-size="14" text-anchor="middle" fill="#333" transform="rotate(-90 80 255)">Input Images</text>
+  
+  <!-- Conv Layer 1 -->
+  <rect x="130" y="120" width="40" height="260" rx="5" ry="5" fill="#c8e6c9" stroke="#388E3C" stroke-width="2"/>
+  <text x="150" y="255" font-family="Arial" font-size="12" text-anchor="middle" fill="#333" transform="rotate(-90 150 255)">Conv2D</text>
+  
+  <!-- Pool Layer 1 -->
+  <rect x="190" y="140" width="30" height="220" rx="5" ry="5" fill="#c8e6c9" stroke="#388E3C" stroke-width="2"/>
+  <text x="205" y="255" font-family="Arial" font-size="12" text-anchor="middle" fill="#333" transform="rotate(-90 205 255)">MaxPool</text>
+  
+  <!-- Conv Layer 2 -->
+  <rect x="240" y="160" width="40" height="180" rx="5" ry="5" fill="#c8e6c9" stroke="#388E3C" stroke-width="2"/>
+  <text x="260" y="255" font-family="Arial" font-size="12" text-anchor="middle" fill="#333" transform="rotate(-90 260 255)">Conv2D</text>
+  
+  <!-- Pool Layer 2 -->
+  <rect x="300" y="180" width="30" height="140" rx="5" ry="5" fill="#c8e6c9" stroke="#388E3C" stroke-width="2"/>
+  <text x="315" y="255" font-family="Arial" font-size="12" text-anchor="middle" fill="#333" transform="rotate(-90 315 255)">MaxPool</text>
+  
+  <!-- LSTM Section -->
+  <text x="550" y="70" font-family="Arial" font-size="18" text-anchor="middle" fill="#512DA8">LSTM Component</text>
+  
+  <!-- Connections between CNN and LSTM -->
+  <line x1="330" y1="250" x2="380" y2="250" stroke="#666" stroke-width="2" stroke-dasharray="5,5"/>
+  <text x="355" y="230" font-family="Arial" font-size="14" text-anchor="middle" fill="#666">Features</text>
+  
+  <!-- Time Distributed Layer -->
+  <rect x="380" y="180" width="40" height="140" rx="5" ry="5" fill="#d1c4e9" stroke="#512DA8" stroke-width="2"/>
+  <text x="400" y="255" font-family="Arial" font-size="12" text-anchor="middle" fill="#333" transform="rotate(-90 400 255)">TimeDistributed</text>
+  
+  <!-- LSTM Cells -->
+  <rect x="440" y="180" width="100" height="140" rx="5" ry="5" fill="#d1c4e9" stroke="#512DA8" stroke-width="2"/>
+  <text x="490" y="255" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">LSTM</text>
+  <text x="490" y="275" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Units=128</text>
+  
+  <!-- Second LSTM Layer (optional) -->
+  <rect x="560" y="200" width="100" height="100" rx="5" ry="5" fill="#d1c4e9" stroke="#512DA8" stroke-width="2"/>
+  <text x="610" y="255" font-family="Arial" font-size="14" text-anchor="middle" fill="#333">LSTM</text>
+  <text x="610" y="275" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Units=64</text>
+  
+  <!-- Dense Layer -->
+  <rect x="680" y="210" width="50" height="80" rx="5" ry="5" fill="#ffccbc" stroke="#E64A19" stroke-width="2"/>
+  <text x="705" y="255" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Dense</text>
+  
+  <!-- Output Layer -->
+  <rect x="750" y="220" width="30" height="60" rx="5" ry="5" fill="#f8bbd0" stroke="#C2185B" stroke-width="2"/>
+  <text x="765" y="255" font-family="Arial" font-size="12" text-anchor="middle" fill="#333">Output</text>
+  
+  <!-- Arrows -->
+  <line x1="110" y1="250" x2="130" y2="250" stroke="#666" stroke-width="2"/>
+  <polygon points="125,245 135,250 125,255" fill="#666"/>
+  
+  <line x1="170" y1="250" x2="190" y2="250" stroke="#666" stroke-width="2"/>
+  <polygon points="185,245 195,250 185,255" fill="#666"/>
+  
+  <line x1="220" y1="250" x2="240" y2="250" stroke="#666" stroke-width="2"/>
+  <polygon points="235,245 245,250 235,255" fill="#666"/>
+  
+  <line x1="280" y1="250" x2="300" y2="250" stroke="#666" stroke-width="2"/>
+  <polygon points="295,245 305,250 295,255" fill="#666"/>
+  
+  <line x1="420" y1="250" x2="440" y2="250" stroke="#666" stroke-width="2"/>
+  <polygon points="435,245 445,250 435,255" fill="#666"/>
+  
+  <line x1="540" y1="250" x2="560" y2="250" stroke="#666" stroke-width="2"/>
+  <polygon points="555,245 565,250 555,255" fill="#666"/>
+  
+  <line x1="660" y1="250" x2="680" y2="250" stroke="#666" stroke-width="2"/>
+  <polygon points="675,245 685,250 675,255" fill="#666"/>
+  
+  <line x1="730" y1="250" x2="750" y2="250" stroke="#666" stroke-width="2"/>
+  <polygon points="745,245 755,250 745,255" fill="#666"/>
+  
+  <!-- Legend -->
+  <rect x="50" y="430" width="20" height="20" fill="#bbdefb" stroke="#1976D2" stroke-width="2"/>
+  <text x="80" y="445" font-family="Arial" font-size="12" fill="#333">Input Layer</text>
+  
+  <rect x="150" y="430" width="20" height="20" fill="#c8e6c9" stroke="#388E3C" stroke-width="2"/>
+  <text x="180" y="445" font-family="Arial" font-size="12" fill="#333">CNN Layers</text>
+  
+  <rect x="250" y="430" width="20" height="20" fill="#d1c4e9" stroke="#512DA8" stroke-width="2"/>
+  <text x="280" y="445" font-family="Arial" font-size="12" fill="#333">LSTM Layers</text>
+  
+  <rect x="350" y="430" width="20" height="20" fill="#ffccbc" stroke="#E64A19" stroke-width="2"/>
+  <text x="380" y="445" font-family="Arial" font-size="12" fill="#333">Dense Layer</text>
+  
+  <rect x="450" y="430" width="20" height="20" fill="#f8bbd0" stroke="#C2185B" stroke-width="2"/>
+  <text x="480" y="445" font-family="Arial" font-size="12" fill="#333">Output Layer</text>
+  
+  <!-- Additional Info -->
+  <text x="400" y="475" font-family="Arial" font-size="14" text-anchor="middle" fill="#666">Model processes sequence of frames to learn temporal patterns of facial gestures</text>
+</svg>
