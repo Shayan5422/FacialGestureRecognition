@@ -1,11 +1,16 @@
 [project]
 name = "repl-nix-workspace"
 version = "0.1.0"
-description = "Add your description here"
+description = "Eye Movement"
 requires-python = ">=3.11"
 dependencies = [
     "matplotlib>=3.10.3",
     "numpy>=2.2.6",
     "plotly>=6.1.0",
     "streamlit>=1.45.1",
+    "tensorflow>=2.0.0",
+    "opencv-python>=4.5.0",
+    "dlib>=19.22.0",
+    "imutils>=0.5.4",
+    "pyautogui>=0.9.53",
 ]
