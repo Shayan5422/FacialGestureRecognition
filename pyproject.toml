@@ -12,5 +12,5 @@ dependencies = [
     "dlib",
     "imutils",
     "pyautogui",
-    "CMake"
+    "cmake"
 ]
