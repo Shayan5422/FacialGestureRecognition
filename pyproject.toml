@@ -8,8 +8,8 @@ dependencies = [
     "numpy>=2.2.6",
     "plotly>=6.1.0",
     "streamlit>=1.45.1",
-    "opencv-python>=4.5.0",
-    "dlib>=19.22.0",
-    "imutils>=0.5.4",
-    "pyautogui>=0.9.53",
+    "opencv-python",
+    "dlib",
+    "imutils",
+    "pyautogui",
 ]
